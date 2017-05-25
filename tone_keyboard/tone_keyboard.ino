@@ -21,7 +21,6 @@ int notesOctave1[] = {
 };
 
 void setup() {
-  Serial.begin(9600);
   // button pins
   for (int input = buttonStartPin; input < buttonStartPin + buttonCount; input++) {
     pinMode(input, INPUT_PULLUP);
@@ -39,7 +38,6 @@ void loop() {
 
     // play sound for key
     if (buttonState == LOW && keyPressed == false) {
-      Serial.println(input); 
       keyPressed = true;
       tone(speakerPin, notesOctave1[input-buttonStartPin]);
     }
