@@ -1,6 +1,6 @@
 /*
   Simple 8 LED cycle test
- Ryan Wilson (c) 2017
+  Ryan Wilson (c) 2017
  */
 
 //  D0-D7:PORTD
