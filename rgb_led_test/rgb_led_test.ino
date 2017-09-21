@@ -12,6 +12,10 @@ const int R_IDX = 0;
 const int G_IDX = 1;
 const int B_IDX = 2;
 
+const float R_MULT = 0.15;
+const float G_MULT = 0.15;
+const float B_MULT = 0.15;
+
 const boolean SHOW_DEFINED_COLOURS = true;
 const boolean SHOW_RANDOM_COLOURS = true;
 const boolean SHOW_COLOUR_WHEEL = true;
@@ -86,9 +90,9 @@ void loop() {
   if (SHOW_DEFINED_COLOURS) {
     int listSize = sizeof (colours) / sizeof (colours[0]);
     for (int i = 0; i < listSize; i++) {
-      analogWrite(R_PIN, colours[i][R_IDX]);
-      analogWrite(G_PIN, colours[i][G_IDX]);
-      analogWrite(B_PIN, colours[i][B_IDX]);
+      analogWrite(R_PIN, colours[i][R_IDX] * R_MULT);
+      analogWrite(G_PIN, colours[i][G_IDX] * G_MULT);
+      analogWrite(B_PIN, colours[i][B_IDX] * B_MULT);
       delay(500);
     }
   }
