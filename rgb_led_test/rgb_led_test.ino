@@ -97,28 +97,28 @@ void loop() {
     }
   }
 
-  // go through list of random colours (@ 25% brightness)
+  // go through list of random colours
   if (SHOW_RANDOM_COLOURS) {
     for (int i = 0; i < 40; i++) {
-      analogWrite(R_PIN, random(63));
-      analogWrite(G_PIN, random(63));
-      analogWrite(B_PIN, random(63));
+      analogWrite(R_PIN, random(255) * R_MULT);
+      analogWrite(G_PIN, random(255) * G_MULT);
+      analogWrite(B_PIN, random(255) * B_MULT);
       delay(100);
     }
   }
 
-  // colour wheel cycle (@ 10% brightness)
+  // colour wheel cycle
   if (SHOW_COLOUR_WHEEL) {
     int deltaSize = sizeof (colour_wheel_delta) / sizeof (colour_wheel_delta[0]);
-    int R_VAL = 25;
+    int R_VAL = 31;
     int G_VAL = 0;
     int B_VAL = 0;
 
     for (int i = 0; i < deltaSize; i++) {
-      for (int j = 0; j < 25; j++) {
-        analogWrite(R_PIN, R_VAL);
-        analogWrite(G_PIN, G_VAL);
-        analogWrite(B_PIN, B_VAL);
+      for (int j = 0; j < 31; j++) {
+        analogWrite(R_PIN, R_VAL * 8 * R_MULT);
+        analogWrite(G_PIN, G_VAL * 8 * R_MULT);
+        analogWrite(B_PIN, B_VAL * 8 * R_MULT);
         delay(50);
         R_VAL += colour_wheel_delta[i][R_IDX];
         G_VAL += colour_wheel_delta[i][G_IDX];
