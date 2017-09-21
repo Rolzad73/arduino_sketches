@@ -117,8 +117,8 @@ void loop() {
     for (int i = 0; i < deltaSize; i++) {
       for (int j = 0; j < 31; j++) {
         analogWrite(R_PIN, R_VAL * 8 * R_MULT);
-        analogWrite(G_PIN, G_VAL * 8 * R_MULT);
-        analogWrite(B_PIN, B_VAL * 8 * R_MULT);
+        analogWrite(G_PIN, G_VAL * 8 * G_MULT);
+        analogWrite(B_PIN, B_VAL * 8 * B_MULT);
         delay(50);
         R_VAL += colour_wheel_delta[i][R_IDX];
         G_VAL += colour_wheel_delta[i][G_IDX];
