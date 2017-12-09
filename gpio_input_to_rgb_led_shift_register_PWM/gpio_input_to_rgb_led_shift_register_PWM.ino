@@ -1,5 +1,5 @@
 /*
-  RGB LED shift register PWM test
+  GPIO input to RGB LED shift register PWM
   Ryan Wilson (c) 2017
   
   based on "74HC595 PWM SPI v1.3" by Joseph Francis 
@@ -126,6 +126,17 @@ void spi_transfer(byte data) {
   loop_until_bit_is_set(SPSR, SPIF); 
 }
 
+// input pins
+const int INPUT_1 = 8;
+const int INPUT_2 = 7;
+const int INPUT_3 = 6;
+const int INPUT_4 = 5;
+
+int val_1 = 0;
+int val_2 = 0;
+int val_3 = 0;
+int val_4 = 0;
+
 // set specific RGB LED to preset colour
 void ledToColour(byte ledLocation, const byte colour[3]) {
   ledToColour(ledLocation, colour[0], colour[1], colour[2]);
@@ -170,127 +181,6 @@ void allToColour(byte redVal, byte greenVal, byte blueVal) {
   }
 }
 
-// setup //////////////////////////////////////////////////////////////////////
-void setup() {
-  // for debug
-  Serial.begin(9600);
-
-  // set pins to output so you can control the shift register
-  pinMode(LATCH_PIN, OUTPUT);
-  pinMode(CLOCK_PIN, OUTPUT);
-  pinMode(DATA_PIN, OUTPUT);
-
-  // clear data
-  digitalWrite(LATCH_PIN, LOW);
-  digitalWrite(CLOCK_PIN, LOW);
-  digitalWrite(DATA_PIN, LOW);
-
-  // setup to run SPI
-  setupSPI();
-
-  // activate the PWM timer
-  Timer1.initialize(TIMER_DELAY);
-  Timer1.attachInterrupt(processInterrupt);
-}
-
-// loop ///////////////////////////////////////////////////////////////////////
-void loop() {
-  // start all black
-  allToColour(BLACK);
-  delay(500);
-  allToColour(GREY50);
-  delay(500);
-  allToColour(WHITE);
-  delay(1000);
-
-  allToColour(RED);
-  delay(500);
-  allToColour(ORANGE);
-  delay(500);
-  allToColour(YELLOW);
-  delay(500);
-  allToColour(CHARTREUSE);
-  delay(500);
-  allToColour(GREEN);
-  delay(500);
-  allToColour(SPRINGGREEN);
-  delay(500);
-  allToColour(CYAN);
-  delay(500);
-  allToColour(AZURE);
-  delay(500);
-  allToColour(BLUE);
-  delay(500);
-  allToColour(VIOLET);
-  delay(500);
-  allToColour(MAGENTA);
-  delay(500);
-  allToColour(ROSE);
-
-  delay(1000);
-
-  // colour transitions (from black)
-  int stepCount = 16;
-  int stepDelay = 50;
-  fromColourToColour(BLACK, RED, stepCount, stepDelay);
-  fromColourToColour(BLACK, ORANGE, stepCount, stepDelay);
-  fromColourToColour(BLACK, YELLOW, stepCount, stepDelay);
-  fromColourToColour(BLACK, CHARTREUSE, stepCount, stepDelay);
-  fromColourToColour(BLACK, GREEN, stepCount, stepDelay);
-  fromColourToColour(BLACK, SPRINGGREEN, stepCount, stepDelay);
-  fromColourToColour(BLACK, CYAN, stepCount, stepDelay);
-  fromColourToColour(BLACK, AZURE, stepCount, stepDelay);
-  fromColourToColour(BLACK, BLUE, stepCount, stepDelay);
-  fromColourToColour(BLACK, VIOLET, stepCount, stepDelay);
-  fromColourToColour(BLACK, MAGENTA, stepCount, stepDelay);
-  fromColourToColour(BLACK, ROSE, stepCount, stepDelay);
-  
-  delay(1000);
-  
-  fromColourToColour(RED, ORANGE, stepCount, stepDelay);
-  fromColourToColour(ORANGE, YELLOW, stepCount, stepDelay);
-  fromColourToColour(YELLOW, CHARTREUSE, stepCount, stepDelay);
-  fromColourToColour(CHARTREUSE, GREEN, stepCount, stepDelay);
-  fromColourToColour(GREEN, SPRINGGREEN, stepCount, stepDelay);
-  fromColourToColour(SPRINGGREEN, CYAN, stepCount, stepDelay);
-  fromColourToColour(CYAN, AZURE, stepCount, stepDelay);
-  fromColourToColour(AZURE, BLUE, stepCount, stepDelay);
-  fromColourToColour(BLUE, VIOLET, stepCount, stepDelay);
-  fromColourToColour(VIOLET, MAGENTA, stepCount, stepDelay);
-  fromColourToColour(MAGENTA, ROSE, stepCount, stepDelay);
-  fromColourToColour(ROSE, RED, stepCount, stepDelay);
-  
-  delay(1000);
-  
-  ledToColour(0, RED);
-  delay(100);
-  ledToColour(1, ORANGE);
-  delay(100);
-  ledToColour(2, YELLOW);
-  delay(100);
-  ledToColour(3, CHARTREUSE);
-  delay(100);
-  ledToColour(4, GREEN);
-  delay(100);
-  ledToColour(5, SPRINGGREEN);
-  delay(100);
-  ledToColour(6, CYAN);
-  delay(100);
-  ledToColour(7, AZURE);
-  delay(100);
-  ledToColour(8, BLUE);
-  delay(100);
-  ledToColour(9, VIOLET);
-  delay(100);
-  ledToColour(10, MAGENTA);
-  delay(100);
-  ledToColour(11, ROSE);
-  
-  delay(1000);
-  
-  cycleRandomColours();
-}
-
 void fromColourToColour(const byte fromColour[3], const byte toColour[3], int stepCount, int stepDelay) {
   fromColourToColour(fromColour[0], fromColour[1], fromColour[2], toColour[0], toColour[1], toColour[2], stepCount, stepDelay);
 }
@@ -317,5 +207,111 @@ void cycleRandomColours() {
     }
     delay(100);
   }
+}
+
+// current DOD status
+int currentStatus = -1;
+int nextStatus = 0;
+// States
+// 0 no data           // black
+// 1 DOD Queue = 0     // blue
+// 2 DOD Queue = 1-5   // white
+// 3 DOD Queue = 6-10  // yellow
+// 4 DOD Queue = 11-15 // orange
+// 5 DOD Queue = 15-20 // red
+// 6 DOD Queue = 20+   // pink
+// 7 DOD Queue contains BLOCKER // pulsing red to black
+// 8 animation 1 (random)
+// 9 animation 2 (rainbow cycle)
+// 10 animation 3 (fire animation 1 particles up?)
+// 11 animation 4 (spin animation)
+
+// setup //////////////////////////////////////////////////////////////////////
+void setup() {
+  // for debug
+  Serial.begin(9600);
+
+  // set pins to output so you can control the shift register
+  pinMode(LATCH_PIN, OUTPUT);
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(DATA_PIN, OUTPUT);
+
+  pinMode(INPUT_1, INPUT);
+  pinMode(INPUT_2, INPUT);
+  pinMode(INPUT_3, INPUT);
+  pinMode(INPUT_4, INPUT);
+
+  // clear data
+  digitalWrite(LATCH_PIN, LOW);
+  digitalWrite(CLOCK_PIN, LOW);
+  digitalWrite(DATA_PIN, LOW);
+
+  // setup to run SPI
+  setupSPI();
+
+  // activate the PWM timer
+  Timer1.initialize(TIMER_DELAY);
+  Timer1.attachInterrupt(processInterrupt);
+
+  // prepare random seed
+  randomSeed(analogRead(0));
+
+  // start all black
+  allToColour(BLACK);
+}
+
+// loop ///////////////////////////////////////////////////////////////////////
+void loop() {
+  // read input
+  val_1 = digitalRead(INPUT_1);
+  val_2 = digitalRead(INPUT_2);
+  val_3 = digitalRead(INPUT_3);
+  val_4 = digitalRead(INPUT_4);
+  // combine binary digits to integer
+  nextStatus = val_1 + (val_2*2) + (val_3*4) + (val_4*8);
+  Serial.println(nextStatus);
+
+  // only change if status changes
+  if (nextStatus != currentStatus) {
+    currentStatus = nextStatus;
+
+    // set lEDs
+    switch (nextStatus) {
+      case 0: // no data
+        allToColour(BLACK);
+      break;
+      case 1: // DOD Queue = 0
+        allToColour(BLUE);
+      break;
+      case 2: // DOD Queue = 1-5
+        allToColour(WHITE);
+      break;
+      case 3: // DOD Queue = 6-10
+        allToColour(YELLOW);
+      break;
+      case 4: // DOD Queue = 11-15
+        allToColour(ORANGE);
+      break;
+      case 5: // DOD Queue = 15-20
+        allToColour(RED);
+      break;
+      case 6: // DOD Queue = 20+
+        allToColour(ROSE);
+      break;
+      case 7: // DOD Queue contains BLOCKER
+        allToColour(GREEN);
+      break;
+      case 8:
+        // TODO: animations
+      break;
+      default:
+        // do nothing
+      break;
+    }
+
+    currentStatus = nextStatus;
+  }
+
+  delay(1000);
 }
 

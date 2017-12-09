@@ -16,9 +16,9 @@ const float R_MULT = 0.15;
 const float G_MULT = 0.15;
 const float B_MULT = 0.15;
 
-const boolean SHOW_DEFINED_COLOURS = true;
-const boolean SHOW_RANDOM_COLOURS = true;
-const boolean SHOW_COLOUR_WHEEL = true;
+const boolean SHOW_DEFINED_COLOURS = false;
+const boolean SHOW_RANDOM_COLOURS = false;
+const boolean SHOW_COLOUR_WHEEL = false;
 
 // defined colours
 const byte colours[][3] = {
