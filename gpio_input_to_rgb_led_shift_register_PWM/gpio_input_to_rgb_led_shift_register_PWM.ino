@@ -9,11 +9,15 @@
 #include <TimerOne.h>
 
 // pin connected to ST_CP of 74HC595
+// arduino nano SPI:SS pin
 const int LATCH_PIN = 10;
 // pin connected to SH_CP of 74HC595
+// arduino nano SPI:SCK pin
 const int CLOCK_PIN = 13;
 // pin connected to DS of 74HC595
+// arduino nano SPI:MOSI pin
 const int DATA_PIN = 11;
+
 // used for faster latching
 const int LATCH_PIN_PORTB = LATCH_PIN - 8;
 
@@ -56,7 +60,7 @@ int ticker = 0;
 #define TIMER_DELAY 500
 
 // this example uses 6 full shift registers, but the hardware tested on
-// only drives 12 RGB LEDs and thereby olny uses half of the 2nd set of 3
+// only drives 12 RGB LEDs and thereby only uses half of the 2nd set of 3
 // 1st = first 8 RED
 // 2nd = first 8 GREEN
 // 3rd = first 8 BLUE
@@ -151,9 +155,9 @@ void ledToColour(byte ledLocation, byte redVal, byte greenVal, byte blueVal) {
     srPins[ledLocation + 16] = blueVal;
   } else {
     // set first half of second SR set (we don't use 2nd nibble)
-    srPins[ledLocation + 16] = redVal;
-    srPins[ledLocation + 24] = greenVal;
-    srPins[ledLocation + 32] = blueVal;
+    srPins[ledLocation + 24] = redVal;
+    srPins[ledLocation + 32] = greenVal;
+    srPins[ledLocation + 40] = blueVal;
   }
 }
 
