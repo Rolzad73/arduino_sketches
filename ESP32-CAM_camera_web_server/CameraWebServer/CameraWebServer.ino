@@ -1,26 +1,23 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 
-//
-// WARNING!!! Make sure that you have either selected ESP32 Wrover Module,
-//            or another board which has PSRAM enabled
-//
-
-// Select camera model
-//#define CAMERA_MODEL_WROVER_KIT
-//#define CAMERA_MODEL_ESP_EYE
-//#define CAMERA_MODEL_M5STACK_PSRAM
-//#define CAMERA_MODEL_M5STACK_WIDE
 #define CAMERA_MODEL_AI_THINKER
-
 #include "camera_pins.h"
 
-const char* ssid = "RTAir_2";
-const char* password = "RolzLair";
+// credentials for various access points (DON'T COMMIT)
+const char* ssid = "";
+const char* password = "";
+
+#define FLASH_GPIO 4
+#define LED1_GPIO 33
 
 void startCameraServer();
 
 void setup() {
+  // use led to indicate various statuses
+  pinMode(LED1_GPIO, OUTPUT);
+  LEDStartBoot();
+
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   Serial.println();
@@ -47,7 +44,7 @@ void setup() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
   //init with high specs to pre-allocate larger buffers
-  if(psramFound()){
+  if (psramFound()) {
     config.frame_size = FRAMESIZE_UXGA;
     config.jpeg_quality = 10;
     config.fb_count = 2;
@@ -56,11 +53,6 @@ void setup() {
     config.jpeg_quality = 12;
     config.fb_count = 1;
   }
-
-#if defined(CAMERA_MODEL_ESP_EYE)
-  pinMode(13, INPUT_PULLUP);
-  pinMode(14, INPUT_PULLUP);
-#endif
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
@@ -79,28 +71,81 @@ void setup() {
   //drop down frame size for higher initial frame rate
   s->set_framesize(s, FRAMESIZE_QVGA);
 
-#if defined(CAMERA_MODEL_M5STACK_WIDE)
-  s->set_vflip(s, 1);
-  s->set_hmirror(s, 1);
-#endif
+  //disable flash
+  pinMode(FLASH_GPIO, OUTPUT);
+  digitalWrite(FLASH_GPIO, LOW);
 
+  //indicate success camera setup
+  LEDSuccessCamera();
+
+  // connect to access point
   WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.println(wl_status_to_string(WiFi.status()));
   }
   Serial.println("");
   Serial.println("WiFi connected");
+  LEDSuccessWiFi();
 
   startCameraServer();
 
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());
   Serial.println("' to connect");
+  LEDSuccessServer();
+  // indicate successful overall startup
+  LEDSuccessStartup();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   delay(10000);
+}
+
+void LEDStartBoot() {
+  LEDFlash(2, 500);
+  delay(500);
+}
+
+void LEDSuccessCamera() {
+  LEDFlash(2, 100);
+  delay(500);
+}
+
+void LEDSuccessWiFi() {
+  LEDFlash(3, 100);
+  delay(500);
+}
+
+void LEDSuccessServer() {
+  LEDFlash(4, 100);
+  delay(500);
+}
+
+void LEDSuccessStartup() {
+  LEDFlash(8, 25);
+  delay(500);
+}
+
+void LEDFlash(int times, int delaytime) {
+  for (int count = 0; count < times; count++) {
+    digitalWrite(LED1_GPIO, LOW); //on
+    delay(delaytime);
+    digitalWrite(LED1_GPIO, HIGH); //off
+    delay(delaytime);
+  }
+}
+
+const char* wl_status_to_string(wl_status_t status) {
+  switch (status) {
+    case WL_NO_SHIELD: return "WL_NO_SHIELD";
+    case WL_IDLE_STATUS: return "WL_IDLE_STATUS";
+    case WL_NO_SSID_AVAIL: return "WL_NO_SSID_AVAIL";
+    case WL_SCAN_COMPLETED: return "WL_SCAN_COMPLETED";
+    case WL_CONNECTED: return "WL_CONNECTED";
+    case WL_CONNECT_FAILED: return "WL_CONNECT_FAILED";
+    case WL_CONNECTION_LOST: return "WL_CONNECTION_LOST";
+    case WL_DISCONNECTED: return "WL_DISCONNECTED";
+  }
 }
